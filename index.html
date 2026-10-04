@@ -217,6 +217,32 @@
     color: var(--ink);
     opacity: 0.55;
   }
+
+  /* Music toggle button */
+  .music-btn{
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 10;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--wine) 100%);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 20px;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(54, 42, 110, 0.35);
+  }
+
+  .music-btn:focus-visible{
+    outline: 3px solid var(--gold);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .bg-hearts span{ animation: none; }
+  }
 </style>
 </head>
 <body>
@@ -249,7 +275,7 @@
         <a class="contact-link" href="https://www.instagram.com/omkark610" target="_blank" rel="noopener">Say hello</a>
       </div>
     </div>
-    
+
     <div class="card">
       <div class="card-inner">
         <div class="emoji-badge"><span class="emoji">🐢</span></div>
@@ -260,7 +286,6 @@
       </div>
     </div>
 
-    
     <div class="card">
       <div class="card-inner">
         <div class="emoji-badge"><span class="emoji">🐰</span></div>
@@ -270,22 +295,107 @@
         <a class="contact-link" href="https://www.instagram.com/omkark610" target="_blank" rel="noopener">Say hello</a>
       </div>
     </div>
-    
 
   </div>
 
   <footer>made with 🤍</footer>
 
-  <div style="visibility: hidden !important">
-    <iframe
-        src="https://www.youtube.com/embed/UIuBtl4rz0E?autoplay=1&amp;mute=0&amp;loop=1&amp;playlist=UIuBtl4rz0E&amp;controls=0&amp;showinfo=0&amp;modestbranding=1&amp;iv_load_policy=3&amp;playsinline=1&amp;rel=0&amp;disablekb=1&amp;cc_load_policy=3"
-        title="Song"
-        allow="autoplay; encrypted-media; picture-in-picture"
-        referrerpolicy="strict-origin-when-cross-origin"
-        style="display: none"
-    ></iframe>
+  <button class="music-btn" id="musicBtn" type="button" aria-pressed="false">🎵 Loading music…</button>
+
+  <!-- YouTube player (kept off-screen; audio only is heard) -->
+  <div style="position:fixed; left:-9999px; top:0; width:200px; height:200px; opacity:0; pointer-events:none;" aria-hidden="true">
+    <div id="yt-player"></div>
   </div>
 
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    var player = null;
+    var ytReady = false;
+    var playing = false;      // true only when music is audible
+    var btn = document.getElementById('musicBtn');
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('yt-player', {
+        width: '200',
+        height: '200',
+        videoId: 'UIuBtl4rz0E',
+        playerVars: {
+          autoplay: 1,
+          start: 0,
+          loop: 1,
+          playlist: 'UIuBtl4rz0E',
+          controls: 0,
+          playsinline: 1,
+          rel: 0,
+          modestbranding: 1,
+          disablekb: 1,
+          iv_load_policy: 3
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerState
+        }
+      });
+    }
+
+    function onPlayerReady() {
+      ytReady = true;
+      // 1) Try to autoplay WITH sound as soon as the page loads
+      player.unMute();
+      player.setVolume(100);
+      player.seekTo(0, true);
+      player.playVideo();
+
+      // 2) If the browser blocked it, fall back to muted autoplay
+      setTimeout(function () {
+        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+          player.mute();
+          player.playVideo();
+          btn.textContent = '🔊 Tap for sound';
+        }
+      }, 1000);
+    }
+
+    function onPlayerState(e) {
+      if (e.data === YT.PlayerState.PLAYING && !player.isMuted()) {
+        playing = true;
+        btn.textContent = '🔇 Pause music';
+        btn.setAttribute('aria-pressed', 'true');
+      }
+    }
+
+    function startMusic() {
+      if (!ytReady) return;
+      player.seekTo(0, true);   // begin from 0:00
+      player.unMute();
+      player.setVolume(100);
+      player.playVideo();
+      playing = true;
+      btn.textContent = '🔇 Pause music';
+      btn.setAttribute('aria-pressed', 'true');
+    }
+
+    function stopMusic() {
+      if (ytReady) player.pauseVideo();
+      playing = false;
+      btn.textContent = '🎵 Play music';
+      btn.setAttribute('aria-pressed', 'false');
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      playing ? stopMusic() : startMusic();
+    });
+
+    // If sound was blocked, the first tap/click anywhere turns it on
+    function firstInteraction() {
+      if (!playing) startMusic();
+      document.removeEventListener('click', firstInteraction);
+      document.removeEventListener('touchstart', firstInteraction);
+    }
+    document.addEventListener('click', firstInteraction);
+    document.addEventListener('touchstart', firstInteraction, { passive: true });
+  </script>
 
 </body>
 </html>
