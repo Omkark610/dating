@@ -321,6 +321,7 @@
         height: '200',
         videoId: 'UIuBtl4rz0E',
         playerVars: {
+          start: 0,
           loop: 1,
           playlist: 'UIuBtl4rz0E',
           controls: 0,
@@ -342,6 +343,7 @@
     function startMusic() {
       wantPlay = true;
       if (!ytReady) return;
+      player.seekTo(0, true);   // always begin from 0:00
       player.unMute();
       player.setVolume(100);
       player.playVideo();
